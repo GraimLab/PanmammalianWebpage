@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import CorrelationList from "./CorrelationList";
 import CorrelationCalculator from "./CorrelationCalculator";
+import Footer from "./Footer";
 
 type Result = {
   rank: number;
@@ -132,6 +133,7 @@ export default function App() {
 
         
       </div>
+      <Footer />
     </div>
   );
 }
