@@ -1,6 +1,6 @@
 import { useState } from "react";
-import Runner from "./Runner";
-import Plot from "./Plot";
+
+import CorrelationList from "./CorrelationList";
 
 type Result = {
   rank: number;
@@ -14,7 +14,7 @@ type Result = {
 
 export default function App() {
   const [genes, setGenes] = useState("");
-  const [results, setResults] = useState<Result[]>([]);
+  const [selectedCancerType, setSelectedCancerType] = useState<string>("all");
 
   function runMockAnalysis() {
   }
@@ -30,9 +30,6 @@ export default function App() {
       }}
     >
       <div style={{ maxWidth: "1180px", margin: "0 auto" }}>
-        <Runner />
-        <Plot />
-
         <header
           style={{
             background: "#ffffff",
@@ -118,7 +115,6 @@ export default function App() {
                 <button
                   onClick={() => {
                     setGenes("");
-                    setResults([]);
                   }}
                   style={{
                     background: "#e8eef8",
@@ -216,156 +212,59 @@ export default function App() {
               </p>
             </div>
 
-            {results.length === 0 ? (
-              <div
-                style={{
-                  border: "1px dashed #bcc9da",
-                  borderRadius: "14px",
-                  padding: "28px",
-                  background: "#f7f9fc",
-                  color: "#52617f",
-                }}
-              >
-                No results yet. Run an analysis to populate the ranked list.
-              </div>
-            ) : (
-              <div
-                style={{
-                  maxHeight: "640px",
-                  overflowY: "auto",
-                  paddingRight: "6px",
-                  display: "grid",
-                  gap: "14px",
-                }}
-              >
-                {results.map((r) => (
-                  <div
-                    key={r.rank}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "72px 120px 1fr",
-                      gap: "14px",
-                      alignItems: "stretch",
-                    }}
-                  >
-                    <div
-                      style={{
-                        background: "#1d2b45",
-                        color: "white",
-                        borderRadius: "14px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontWeight: 800,
-                        fontSize: "1.25rem",
-                        boxShadow: "0 4px 14px rgba(19, 31, 53, 0.18)",
-                      }}
-                    >
-                      #{r.rank}
-                    </div>
-
-                    <div
-                      style={{
-                        background: "#e9f0ff",
-                        color: "#14346f",
-                        border: "1px solid #c9d8fb",
-                        borderRadius: "14px",
-                        padding: "16px 12px",
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        textAlign: "center",
-                      }}
-                    >
-                      <div style={{ fontSize: "0.8rem", fontWeight: 700, letterSpacing: "0.03em" }}>
-                        SIMILARITY
-                      </div>
-                      <div style={{ fontSize: "1.6rem", fontWeight: 800, marginTop: "4px" }}>
-                        {r.correlation.toFixed(3)}
-                      </div>
-                    </div>
-
-                    <div
-                      style={{
-                        background: "#f8fbff",
-                        border: "1px solid #cdd9e8",
-                        borderRadius: "14px",
-                        padding: "16px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          gap: "16px",
-                          alignItems: "start",
-                          marginBottom: "10px",
-                        }}
-                      >
-                        <div>
-                          <div style={{ fontSize: "1.05rem", fontWeight: 800 }}>
-                            {r.commonName}
-                          </div>
-                          <div style={{ color: "#4f5d79", fontStyle: "italic", marginTop: "2px" }}>
-                            {r.species}
-                          </div>
-                        </div>
-
-                        <div
-                          style={{
-                            background: "#dde8f7",
-                            color: "#234067",
-                            borderRadius: "999px",
-                            padding: "6px 10px",
-                            fontSize: "0.82rem",
-                            fontWeight: 700,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {r.taxonomicGroup}
-                        </div>
-                      </div>
-
-                      <p style={{ margin: "0 0 12px 0", color: "#44506a", lineHeight: 1.45 }}>
-                        {r.summary}
-                      </p>
-
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "10px",
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        <div
-                          style={{
-                            background: "#ffffff",
-                            border: "1px solid #d6e0ec",
-                            borderRadius: "10px",
-                            padding: "8px 10px",
-                            fontSize: "0.9rem",
-                          }}
-                        >
-                          <strong>Genes matched:</strong> {r.genesMatched.toLocaleString()}
-                        </div>
-                        <div
-                          style={{
-                            background: "#ffffff",
-                            border: "1px solid #d6e0ec",
-                            borderRadius: "10px",
-                            padding: "8px 10px",
-                            fontSize: "0.9rem",
-                          }}
-                        >
-                          <strong>Rank percentile:</strong> Top {Math.max(1, r.rank * 5)}%
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <div style={{ marginBottom: "16px", maxWidth: "280px" }}>
+              <label style={{ display: "grid", gap: "8px", fontWeight: 600 }}>
+                <span>Cancer type</span>
+                <select
+                  value={selectedCancerType}
+                  onChange={(e) => setSelectedCancerType(e.target.value)}
+                  style={{
+                    padding: "10px 12px",
+                    borderRadius: "10px",
+                    border: "1px solid #b8c5d6",
+                    background: "#f7f9fc",
+                    color: "#172033",
+                  }}
+                >
+                  <option value="all">all</option>
+                  <option value="bladder">bladder</option>
+                  <option value="breast">breast</option>
+                  <option value="central nervous system">central nervous system</option>
+                  <option value="colon">colon</option>
+                  <option value="colorectal">colorectal</option>
+                  <option value="endometrial">endometrial</option>
+                  <option value="gastric">gastric</option>
+                  <option value="glioma">glioma</option>
+                  <option value="head and neck">head and neck</option>
+                  <option value="hepatocellular">hepatocellular</option>
+                  <option value="intestine">intestine</option>
+                  <option value="kidney">kidney</option>
+                  <option value="leukaemia">leukaemia</option>
+                  <option value="liver">liver</option>
+                  <option value="lung">lung</option>
+                  <option value="lymphoma">lymphoma</option>
+                  <option value="melanoma">melanoma</option>
+                  <option value="mesothelioma">mesothelioma</option>
+                  <option value="oesophagus">oesophagus</option>
+                  <option value="other tumour types">other tumour types</option>
+                  <option value="ovarian">ovarian</option>
+                  <option value="paediatric">paediatric</option>
+                  <option value="pancreas">pancreas</option>
+                  <option value="prostate">prostate</option>
+                  <option value="rare other tumour types">rare other tumour types</option>
+                  <option value="renal">renal</option>
+                  <option value="sarcoma">sarcoma</option>
+                  <option value="skin">skin</option>
+                  <option value="small intestine">small intestine</option>
+                  <option value="soft tissue sarcoma">soft tissue sarcoma</option>
+                  <option value="testicular">testicular</option>
+                  <option value="thyroid">thyroid</option>
+                  <option value="urothelial">urothelial</option>
+                  <option value="uterine">uterine</option>
+                </select>
+              </label>
+            </div>
+            <CorrelationList selected_cancer={selectedCancerType}/>
           </section>
         </div>
       </div>
