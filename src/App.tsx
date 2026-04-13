@@ -3,6 +3,7 @@ import { useState } from "react";
 import CorrelationList from "./CorrelationList";
 import CorrelationCalculator from "./CorrelationCalculator";
 import Footer from "./Footer";
+import GraphView from "./GraphView";
 
 type Result = {
   rank: number;
@@ -57,6 +58,7 @@ export default function App() {
         >
           <div style={{ display: "grid", gap: "24px" }}>
            <CorrelationCalculator /> 
+           <GraphView />
           </div>
 
           <section
