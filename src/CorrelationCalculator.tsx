@@ -54,16 +54,21 @@ export default function CorrelationCalculator({ updateResults }: CalcProps) {
 
     useEffect(() => {
         const loadData = async () => {
-            setLoadingStatus("Loading species data (1/4)...");
-            table_a.current = await loadCSV("/PanmammalianWebpage/data/phyloP_a-c.tsv.gz", { decompress: null, delimiter: '\t' });
-            setLoadingStatus("Loading species data (2/4)...");
-            table_d.current = await loadCSV("/PanmammalianWebpage/data/phyloP_d-l.tsv.gz", { decompress: null, delimiter: '\t' });
-            setLoadingStatus("Loading species data (3/4)...");
-            table_m.current = await loadCSV("/PanmammalianWebpage/data/phyloP_m-o.tsv.gz", { decompress: null, delimiter: '\t' });
-            setLoadingStatus("Loading species data (4/4)...");
-            table_p.current = await loadCSV("/PanmammalianWebpage/data/phyloP_p-z.tsv.gz", { decompress: null, delimiter: '\t' });
-            setTablesReady(true);
-            setLoadingStatus("");
+            try {
+                setLoadingStatus("Loading species data (1/4)...");
+                table_a.current = await loadCSV("/PanmammalianWebpage/data/phyloP_a-c.tsv.gz", { delimiter: '\t' });
+                setLoadingStatus("Loading species data (2/4)...");
+                table_d.current = await loadCSV("/PanmammalianWebpage/data/phyloP_d-l.tsv.gz", { delimiter: '\t' });
+                setLoadingStatus("Loading species data (3/4)...");
+                table_m.current = await loadCSV("/PanmammalianWebpage/data/phyloP_m-o.tsv.gz", { delimiter: '\t' });
+                setLoadingStatus("Loading species data (4/4)...");
+                table_p.current = await loadCSV("/PanmammalianWebpage/data/phyloP_p-z.tsv.gz", { delimiter: '\t' });
+                setTablesReady(true);
+                setLoadingStatus("");
+            } catch (err) {
+                console.error("Failed to load phyloP data:", err);
+                setLoadingStatus(`⚠ Failed to load species data: ${err instanceof Error ? err.message : String(err)}`);
+            }
         };
         loadData();
     }, []);
