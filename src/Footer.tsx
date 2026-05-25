@@ -4,11 +4,11 @@ export default function Footer() {
             style={{
                 marginTop: "40px",
                 paddingTop: "20px",
-                borderTop: "1px solid #d6dde7",
+                borderTop: "1px solid rgba(255,255,255,0.25)",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                color: "#44506a",
+                color: "rgba(255,255,255,0.75)",
                 fontSize: "0.9rem",
             }}
         >
@@ -16,7 +16,7 @@ export default function Footer() {
                 © {new Date().getFullYear()} Graim Lab
             </div>
 
-            
+
 
             <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
                 {/* Paper */}
@@ -24,20 +24,20 @@ export default function Footer() {
                     href="#"
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ display: "flex", alignItems: "center", gap: "6px", textDecoration: "none", color: "#172033" }}
+                    style={{ display: "flex", alignItems: "center", gap: "6px", textDecoration: "none", color: "rgba(255,255,255,0.85)" }}
                 >
                     <svg height="20" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 1.5V8h4.5L14 3.5zM8 12h8v1.5H8V12zm0 4h8v1.5H8V16z" />
                     </svg>
                     Publication (coming soon)
                 </a>
-                
+
                 {/* GitHub */}
                 <a
                     href="https://github.com/GraimLab/CancerIncidencePrediction"
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ display: "flex", alignItems: "center", gap: "6px", textDecoration: "none", color: "#172033" }}
+                    style={{ display: "flex", alignItems: "center", gap: "6px", textDecoration: "none", color: "rgba(255,255,255,0.85)" }}
                 >
                     <svg height="20" viewBox="0 0 16 16" fill="currentColor">
                         <path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 005.47 7.59c.4.07.55-.17.55-.38
@@ -61,7 +61,7 @@ export default function Footer() {
                     href="https://graimlab.org"
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ display: "flex", alignItems: "center", gap: "6px", textDecoration: "none", color: "#172033" }}
+                    style={{ display: "flex", alignItems: "center", gap: "6px", textDecoration: "none", color: "rgba(255,255,255,0.85)" }}
                 >
                     <svg height="20" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm6.93
@@ -80,7 +80,7 @@ export default function Footer() {
                     Lab Website
                 </a>
 
-                
+
 
             </div>
         </footer>

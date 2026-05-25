@@ -71,7 +71,6 @@ export default function App() {
     <div
       style={{
         fontFamily: "Arial, sans-serif",
-        background: "#eef2f7",
         minHeight: "100vh",
         padding: "32px 24px",
         color: "#172033",

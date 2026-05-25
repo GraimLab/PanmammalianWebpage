@@ -1,5 +1,6 @@
 import Plot from "react-plotly.js";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
+import * as Plotly from "plotly.js/dist/plotly";
 
 type CorrRow = {
     species: string;
@@ -17,6 +18,18 @@ export default function GraphView({ resultsTSV, selectedCancer, primateSpecies }
     const [chartType, setChartType] = useState<"dotplot" | "heatmap">("dotplot");
     const [excludePrimates, setExcludePrimates] = useState(true);
     const [dotCancerType, setDotCancerType] = useState(selectedCancer);
+    const graphDivRef = useRef<HTMLElement | null>(null);
+
+    function downloadPNG() {
+        if (!graphDivRef.current) return;
+        const height = chartType === "heatmap" ? 700 : 600;
+        Plotly.downloadImage(graphDivRef.current, {
+            format: "png",
+            filename: `panmammalian_${chartType}_${dotCancerType}`,
+            width: 1400,
+            height,
+        });
+    }
 
     const allData = useMemo<CorrRow[]>(() => {
         if (!resultsTSV) return [];
@@ -140,6 +153,21 @@ const filteredData = useMemo(() =>
                             />
                             <span style={{ color: "#172033", fontWeight: 600 }}>Exclude primates</span>
                         </label>
+                        <button
+                            onClick={downloadPNG}
+                            style={{
+                                marginLeft: "auto",
+                                padding: "8px 18px",
+                                borderRadius: "8px",
+                                border: "1px solid #c7d4ea",
+                                fontWeight: 700,
+                                cursor: "pointer",
+                                background: "#e8eef8",
+                                color: "#17305f",
+                            }}
+                        >
+                            ↓ Download PNG
+                        </button>
                     </div>
 
                     {/* Dot plot */}
@@ -193,6 +221,7 @@ const filteredData = useMemo(() =>
                                     style={{ width: "100%" }}
                                     config={{ responsive: true, displayModeBar: false }}
                                     useResizeHandler
+                                    onInitialized={(_fig, gd) => { graphDivRef.current = gd; }}
                                 />
                             )}
                         </>
@@ -222,6 +251,7 @@ const filteredData = useMemo(() =>
                             style={{ width: "100%" }}
                             config={{ responsive: true, displayModeBar: false }}
                             useResizeHandler
+                            onInitialized={(_fig, gd) => { graphDivRef.current = gd; }}
                         />
                     )}
                 </>

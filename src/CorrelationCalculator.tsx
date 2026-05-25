@@ -1,5 +1,28 @@
 import { useEffect, useRef, useState } from "react";
-import { loadCSV, ColumnTable } from "arquero";
+import { fromCSV, ColumnTable } from "arquero";
+
+/**
+ * Fetch a .tsv.gz file and return an Arquero ColumnTable.
+ *
+ * GitHub Pages (and many CDNs) serve .gz files with Content-Encoding: gzip,
+ * which makes the browser transparently decompress the body before the Fetch
+ * API exposes it. Calling DecompressionStream on already-decoded bytes causes
+ * "incorrect header check". We detect that case via the response header and
+ * only decompress manually when the server sent raw gzip without the header.
+ */
+async function loadTSVGz(url: string): Promise<ColumnTable> {
+    const res = await fetch(url);
+    let text: string;
+    if (res.headers.get("Content-Encoding")?.includes("gzip")) {
+        // Browser already decoded the body – just read it as text.
+        text = await res.text();
+    } else {
+        // Raw gzip bytes – decompress with the Compression Streams API.
+        const ds = new DecompressionStream("gzip");
+        text = await new Response(res.body!.pipeThrough(ds)).text();
+    }
+    return fromCSV(text, { delimiter: "\t" });
+}
 
 type CalcProps = {
     updateResults: (tsv: string) => void
@@ -56,13 +79,13 @@ export default function CorrelationCalculator({ updateResults }: CalcProps) {
         const loadData = async () => {
             try {
                 setLoadingStatus("Loading species data (1/4)...");
-                table_a.current = await loadCSV("/PanmammalianWebpage/data/phyloP_a-c.tsv.gz", { delimiter: '\t' });
+                table_a.current = await loadTSVGz("/PanmammalianWebpage/data/phyloP_a-c.tsv.gz");
                 setLoadingStatus("Loading species data (2/4)...");
-                table_d.current = await loadCSV("/PanmammalianWebpage/data/phyloP_d-l.tsv.gz", { delimiter: '\t' });
+                table_d.current = await loadTSVGz("/PanmammalianWebpage/data/phyloP_d-l.tsv.gz");
                 setLoadingStatus("Loading species data (3/4)...");
-                table_m.current = await loadCSV("/PanmammalianWebpage/data/phyloP_m-o.tsv.gz", { delimiter: '\t' });
+                table_m.current = await loadTSVGz("/PanmammalianWebpage/data/phyloP_m-o.tsv.gz");
                 setLoadingStatus("Loading species data (4/4)...");
-                table_p.current = await loadCSV("/PanmammalianWebpage/data/phyloP_p-z.tsv.gz", { delimiter: '\t' });
+                table_p.current = await loadTSVGz("/PanmammalianWebpage/data/phyloP_p-z.tsv.gz");
                 setTablesReady(true);
                 setLoadingStatus("");
             } catch (err) {
