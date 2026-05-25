@@ -8,71 +8,85 @@ type corr_type = {
 
 const imageCache = new Map<string, string>();
 
+const API = "https://api.phylopic.org";
+
+/** Fetch a thumbnail URL for one node href. Tries primaryImage first;
+ *  falls back to any image tagged to that node via filter_node. */
+async function thumbnailForNode(nodeHref: string, build: number): Promise<string | null> {
+    const nodeRes = await fetch(`${API}${nodeHref}`);
+    if (!nodeRes.ok) return null;
+    const nodeJson = await nodeRes.json();
+
+    let imgHref: string | undefined = nodeJson?._links?.primaryImage?.href;
+
+    if (!imgHref) {
+        // No primary image — try any image tagged to this node.
+        const uuid = nodeHref.match(/\/nodes\/([^?/]+)/)?.[1];
+        if (uuid) {
+            const listRes = await fetch(`${API}/images?build=${build}&filter_node=${uuid}&page=0`);
+            if (listRes.ok) {
+                const listJson = await listRes.json();
+                imgHref = listJson?._links?.items?.[0]?.href;
+            }
+        }
+    }
+
+    if (!imgHref) return null;
+
+    const imgRes = await fetch(`${API}${imgHref}`);
+    if (!imgRes.ok) return null;
+    const imgJson = await imgRes.json();
+    // thumbnailFiles are full https://images.phylopic.org/… URLs; prefer 192×192 ([0]).
+    return imgJson?._links?.thumbnailFiles?.[0]?.href
+        ?? imgJson?._links?.thumbnailFiles?.[1]?.href
+        ?? null;
+}
+
+/** Try up to `limit` autocomplete matches for `query`, returning the first
+ *  thumbnail we can resolve, or null. */
+async function lookupByName(query: string, limit = 3): Promise<string | null> {
+    const autoRes = await fetch(`${API}/autocomplete?query=${encodeURIComponent(query)}`);
+    if (!autoRes.ok) return null;
+    const matches: string[] = (await autoRes.json())?.matches ?? [];
+
+    for (const match of matches.slice(0, limit)) {
+        // Nodes meta (no &page) — API redirect includes build number.
+        const metaRes = await fetch(`${API}/nodes?filter_name=${encodeURIComponent(match)}`);
+        if (!metaRes.ok) continue;
+        const meta = await metaRes.json();
+        if (!meta?.totalItems || !meta?._links?.firstPage?.href) continue;
+
+        // Paginated page → item list.
+        const pageRes = await fetch(`${API}${meta._links.firstPage.href}`);
+        if (!pageRes.ok) continue;
+        const items: Array<{ href: string }> = (await pageRes.json())?._links?.items ?? [];
+
+        for (const item of items.slice(0, 2)) {
+            const src = await thumbnailForNode(item.href, meta.build);
+            if (src) return src;
+        }
+    }
+    return null;
+}
+
 async function getPhylopicSilhouette(species: string): Promise<string> {
     if (imageCache.has(species)) return imageCache.get(species)!;
 
-    const fallback = "";
-    const apiBase = "https://api.phylopic.org";
     const normalized = species.replace(/_/g, " ").trim().toLowerCase();
+    const genus = normalized.split(" ")[0];
 
     try {
-        let autoRes = await fetch(`${apiBase}/autocomplete?query=${encodeURIComponent(normalized)}`);
-        let autoJson = await autoRes.json();
-
-        let match = autoJson?.matches?.[0];
-        if (!match) {
-            autoRes = await fetch(`${apiBase}/autocomplete?query=${encodeURIComponent(normalized.split(" ")[0])}`);
-            autoJson = await autoRes.json();
-            match = autoJson?.matches?.[0];
-            if (!match) {
-                imageCache.set(species, fallback);
-                return fallback;
-            }
-        }
-
-        const nodesRes = await fetch(`${apiBase}/nodes?filter_name=${encodeURIComponent(match)}&page=0`);
-        if (!nodesRes.ok) {
-            imageCache.set(species, fallback);
-            return fallback;
-        }
-
-        const nodesJson = await nodesRes.json();
-        const nodeHref = nodesJson?._links?.items?.[0]?.href;
-        if (!nodeHref) {
-            imageCache.set(species, fallback);
-            return fallback;
-        }
-
-        const nodeRes = await fetch(`${apiBase}${nodeHref}`);
-        if (!nodeRes.ok) {
-            imageCache.set(species, fallback);
-            return fallback;
-        }
-
-        const nodeJson = await nodeRes.json();
-        const imageHref = nodeJson?._links?.primaryImage?.href;
-        if (!imageHref) {
-            imageCache.set(species, fallback);
-            return fallback;
-        }
-
-        const imageRes = await fetch(`${apiBase}${imageHref}`);
-        if (!imageRes.ok) {
-            imageCache.set(species, fallback);
-            return fallback;
-        }
-
-        const imageJson = await imageRes.json();
+        // Try full species name first, fall back to genus if that yields nothing.
         const src =
-            imageJson?._links?.thumbnailFiles?.[1]?.href ||
-            imageJson?._links?.thumbnailFiles?.[0]?.href ||
-            "";
+            await lookupByName(normalized)
+            ?? (genus !== normalized ? await lookupByName(genus) : null)
+            ?? "";
 
         imageCache.set(species, src);
         return src;
     } catch {
-        imageCache.set(species, fallback);
-        return fallback;
+        imageCache.set(species, "");
+        return "";
     }
 }
 
