@@ -19,6 +19,7 @@ export default function App() {
   const [selectedCancerType, setSelectedCancerType] = useState<string>("all");
   const [resultTSV, setResultTSV] = useState<string>("");
   const [primateSpecies, setPrimateSpecies] = useState<Set<string>>(new Set());
+  const [speciesOrder, setSpeciesOrder] = useState<Map<string, string>>(new Map());
 
   const availableCancerTypes = useMemo(() => {
     if (!resultTSV) return ["all"];
@@ -48,13 +49,27 @@ export default function App() {
     async function loadTaxonomy() {
       const res = await fetch("/PanmammalianWebpage/data/sp_genus_family_order.txt");
       const text = await res.text();
-      const primates = new Set(
-        text.split("\n")
-          .map(line => line.trim())
-          .filter(line => line.endsWith("\tPrimates"))
-          .map(line => line.split("\t")[0])
-      );
+      const primates = new Set<string>();
+      const orderMap = new Map<string, string>();
+      text.split("\n").forEach(raw => {
+        const line = raw.trim();
+        if (!line) return;
+        const parts = line.split("\t");
+        const species = parts[0];
+        const order = parts[parts.length - 1];
+        if (species && order) {
+          orderMap.set(species, order);
+          // Exclude Primates plus closely related orders Scandentia (Tupaia)
+          // and Dermoptera (Galeopterus) when the primate filter is active.
+          if (
+            order === "Primates" ||
+            species.startsWith("Tupaia_") ||
+            species.startsWith("Galeopterus_")
+          ) primates.add(species);
+        }
+      });
       setPrimateSpecies(primates);
+      setSpeciesOrder(orderMap);
     }
     loadTaxonomy();
   }, []);
@@ -180,6 +195,7 @@ export default function App() {
               resultsTSV={resultTSV}
               selectedCancer={selectedCancerType}
               primateSpecies={primateSpecies}
+              speciesOrder={speciesOrder}
             />
           </Suspense>
         </div>

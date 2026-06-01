@@ -12,9 +12,32 @@ type GraphViewProps = {
     resultsTSV: string;
     selectedCancer: string;
     primateSpecies: Set<string>;
+    speciesOrder: Map<string, string>;
 }
 
-export default function GraphView({ resultsTSV, selectedCancer, primateSpecies }: GraphViewProps) {
+const ORDER_COLORS: Record<string, string> = {
+    "Carnivora":       "#D44035",
+    "Rodentia":        "#3A8FD4",
+    "Primates":        "#5AB55E",
+    "Cetartiodactyla": "#9470C0",
+    "Chiroptera":      "#E08C3A",
+    "Perissodactyla":  "#7248A8",
+    "Cingulata":       "#35A098",
+    "Lagomorpha":      "#9A6035",
+    "Afrosoricida":    "#C0A820",
+    "Eulipotyphla":    "#7A9855",
+    "Macroscelidea":   "#CC78A8",
+    "Dermoptera":      "#C03568",
+    "Hyracoidea":      "#D47858",
+    "Proboscidea":     "#254E88",
+    "Pholidota":       "#9E8ED0",
+    "Tubulidentata":   "#30A882",
+    "Sirenia":         "#E09050",
+    "Scandentia":      "#4282BC",
+    "Pilosa":          "#A85E40",
+};
+
+export default function GraphView({ resultsTSV, selectedCancer, primateSpecies, speciesOrder }: GraphViewProps) {
     const [chartType, setChartType] = useState<"dotplot" | "heatmap">("dotplot");
     const [excludePrimates, setExcludePrimates] = useState(true);
     const [dotCancerType, setDotCancerType] = useState(selectedCancer);
@@ -63,12 +86,22 @@ const filteredData = useMemo(() =>
         const rows = filteredData
             .filter(d => d.cancer_type === dotCancerType)
             .sort((a, b) => a.correlation - b.correlation);
-        return {
-            x: rows.map(d => d.correlation),
-            y: rows.map(d => d.species.replace(/_/g, " ")),
-            colors: rows.map(d => d.correlation),
-        };
-    }, [filteredData, dotCancerType]);
+
+        // Sorted species list drives the y-axis order across all traces.
+        const sortedY = rows.map(d => d.species.replace(/_/g, " "));
+
+        // Group rows by taxonomic order for per-order coloured traces.
+        const groups = new Map<string, { x: number[]; y: string[] }>();
+        for (const row of rows) {
+            const order = speciesOrder.get(row.species) ?? "Other";
+            if (!groups.has(order)) groups.set(order, { x: [], y: [] });
+            const g = groups.get(order)!;
+            g.x.push(row.correlation);
+            g.y.push(row.species.replace(/_/g, " "));
+        }
+
+        return { groups, sortedY };
+    }, [filteredData, dotCancerType, speciesOrder]);
 
     const heatmapData = useMemo(() => {
         // Sort species by "all" correlation descending; fall back to mean across types
@@ -105,7 +138,7 @@ const filteredData = useMemo(() =>
     }, [filteredData, availableCancerTypes]);
 
     const noData = allData.length === 0;
-    const noDotData = dotPlotData.x.length === 0;
+    const noDotData = dotPlotData.sortedY.length === 0;
 
     const toggleBtn = (label: string, type: "dotplot" | "heatmap") => (
         <button
@@ -194,26 +227,34 @@ const filteredData = useMemo(() =>
                                 <p style={{ color: "#4d5b77" }}>No data for cancer type "{dotCancerType}".</p>
                             ) : (
                                 <Plot
-                                    data={[{
-                                        type: "scatter",
-                                        mode: "markers",
-                                        x: dotPlotData.x,
-                                        y: dotPlotData.y,
-                                        marker: {
-                                            size: 8,
-                                            color: dotPlotData.colors,
-                                            colorscale: "RdBu",
-                                            reversescale: true,
-                                            showscale: true,
-                                            colorbar: { title: { text: "ρ" }, thickness: 14 },
-                                        },
-                                        hovertemplate: "<b>%{y}</b><br>ρ = %{x:.4f}<extra></extra>",
-                                    }]}
+                                    data={
+                                        [...dotPlotData.groups.entries()]
+                                            .sort(([a], [b]) => a.localeCompare(b))
+                                            .map(([order, { x, y }]) => ({
+                                                type: "scatter" as const,
+                                                mode: "markers" as const,
+                                                name: order,
+                                                x,
+                                                y,
+                                                marker: {
+                                                    size: 8,
+                                                    color: ORDER_COLORS[order] ?? "#aaaaaa",
+                                                },
+                                                hovertemplate: "<b>%{y}</b><br>ρ = %{x:.4f}<extra></extra>",
+                                            }))
+                                    }
                                     layout={{
                                         title: { text: `All species — ${dotCancerType}`, font: { size: 14 } },
                                         xaxis: { title: { text: "Spearman correlation (ρ)" }, zeroline: true, autorange: "reversed" },
-                                        yaxis: { showticklabels: false, showgrid: false, ticks: "" },
-                                        margin: { l: 10, r: 80, t: 40, b: 50 },
+                                        yaxis: {
+                                            showticklabels: false,
+                                            showgrid: false,
+                                            ticks: "",
+                                            categoryorder: "array",
+                                            categoryarray: dotPlotData.sortedY,
+                                        },
+                                        legend: { font: { size: 11 }, tracegroupgap: 2 },
+                                        margin: { l: 10, r: 160, t: 40, b: 50 },
                                         height: 500,
                                         paper_bgcolor: "transparent",
                                         plot_bgcolor: "#f7f9fc",
@@ -237,6 +278,8 @@ const filteredData = useMemo(() =>
                                 z: heatmapData.z,
                                 colorscale: "RdBu",
                                 reversescale: true,
+                                zmin: -1,
+                                zmax: 1,
                                 colorbar: { title: { text: "ρ" }, thickness: 14 },
                                 hovertemplate: "<b>%{y}</b><br>%{x}<br>ρ = %{z:.4f}<extra></extra>",
                             }]}

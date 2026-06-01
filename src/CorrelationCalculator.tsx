@@ -212,7 +212,7 @@ export default function CorrelationCalculator({ updateResults }: CalcProps) {
             <textarea
                 value={genes}
                 onChange={(e) => setGenes(e.target.value)}
-                placeholder={`TP53\nBRCA1\nEGFR\nAPOE\nVEGFA`}
+                placeholder={`TP53\nBRCA1\nEGFR\nKRAS\nMYC`}
                 style={{
                     width: "100%",
                     flex: 1,
